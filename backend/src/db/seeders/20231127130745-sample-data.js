@@ -69,6 +69,22 @@ const LoansData = [
 
     // type code here for "relation_one" field
   },
+
+  {
+    // type code here for "relation_one" field
+
+    loan_amount: 15000,
+
+    bitcoin_collateral: 1.5,
+
+    interest_rate: 4,
+
+    loan_sanction_date: new Date('2023-06-05T16:45:00Z'),
+
+    bank_account_details: 'Example Bank, Account No: 998877665',
+
+    // type code here for "relation_one" field
+  },
 ];
 
 const VirtualWalletsData = [
@@ -94,6 +110,12 @@ const VirtualWalletsData = [
     // type code here for "relation_one" field
 
     bitcoin_balance: 0.3,
+  },
+
+  {
+    // type code here for "relation_one" field
+
+    bitcoin_balance: 1.5,
   },
 ];
 
@@ -143,6 +165,17 @@ async function associateLoanWithBorrower() {
   if (Loan3?.setBorrower) {
     await Loan3.setBorrower(relatedBorrower3);
   }
+
+  const relatedBorrower4 = await Users.findOne({
+    offset: Math.floor(Math.random() * (await Users.count())),
+  });
+  const Loan4 = await Loans.findOne({
+    order: [['id', 'ASC']],
+    offset: 4,
+  });
+  if (Loan4?.setBorrower) {
+    await Loan4.setBorrower(relatedBorrower4);
+  }
 }
 
 async function associateLoanWithLender() {
@@ -189,6 +222,17 @@ async function associateLoanWithLender() {
   if (Loan3?.setLender) {
     await Loan3.setLender(relatedLender3);
   }
+
+  const relatedLender4 = await Users.findOne({
+    offset: Math.floor(Math.random() * (await Users.count())),
+  });
+  const Loan4 = await Loans.findOne({
+    order: [['id', 'ASC']],
+    offset: 4,
+  });
+  if (Loan4?.setLender) {
+    await Loan4.setLender(relatedLender4);
+  }
 }
 
 async function associateVirtualWalletWithOwner() {
@@ -234,6 +278,17 @@ async function associateVirtualWalletWithOwner() {
   });
   if (VirtualWallet3?.setOwner) {
     await VirtualWallet3.setOwner(relatedOwner3);
+  }
+
+  const relatedOwner4 = await Users.findOne({
+    offset: Math.floor(Math.random() * (await Users.count())),
+  });
+  const VirtualWallet4 = await VirtualWallets.findOne({
+    order: [['id', 'ASC']],
+    offset: 4,
+  });
+  if (VirtualWallet4?.setOwner) {
+    await VirtualWallet4.setOwner(relatedOwner4);
   }
 }
 

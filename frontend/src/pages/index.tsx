@@ -230,7 +230,7 @@ export default function WebSite() {
 
         <PricingSection
           projectName={'bitcoin backed loan system'}
-          withBg={1}
+          withBg={0}
           features={pricing_features}
           description={description}
         />
