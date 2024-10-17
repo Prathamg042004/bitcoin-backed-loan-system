@@ -1,0 +1,28 @@
+FROM node:20.15.1-alpine AS frontend-deps
+RUN apk add --no-cache git
+WORKDIR /app/frontend
+COPY frontend/package.json frontend/yarn.lock ./
+RUN yarn install --pure-lockfile
+
+FROM node:20.15.1-alpine AS backend-deps
+RUN apk add --no-cache git
+WORKDIR /app/backend
+COPY backend/package.json backend/yarn.lock ./
+RUN yarn install --pure-lockfile
+
+FROM node:20.15.1-alpine
+RUN apk add --no-cache git
+
+RUN yarn global add nodemon concurrently
+
+WORKDIR /app
+
+COPY --from=frontend-deps /app/frontend /app/frontend
+
+COPY --from=backend-deps /app/backend /app/backend
+
+COPY frontend /app/frontend
+
+COPY backend /app/backend
+
+CMD ["concurrently", "cd frontend && yarn dev", "cd backend && yarn start"]
