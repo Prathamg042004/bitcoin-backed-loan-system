@@ -18,9 +18,9 @@ export default function WebSiteFooter({
   const borders = useAppSelector((state) => state.style.borders);
   const websiteHeder = useAppSelector((state) => state.style.websiteHeder);
 
-  const style = FooterStyle.WITH_PAGES;
+  const style = FooterStyle.WITH_PROJECT_NAME;
 
-  const design = FooterDesigns.DESIGN_DIVERSITY;
+  const design = FooterDesigns.DEFAULT_DESIGN;
 
   return (
     <div
