@@ -8,6 +8,7 @@ const PasswordResetEmail = require('./email/list/passwordReset');
 const EmailSender = require('./email');
 const config = require('../config');
 const helpers = require('../helpers');
+const db = require('../db/models');
 
 class Auth {
   static async signup(email, password, options = {}, host) {
@@ -18,30 +19,7 @@ class Auth {
       config.bcrypt.saltRounds,
     );
 
-    if (user) {
-      if (user.authenticationUid) {
-        throw new ValidationError('auth.emailAlreadyInUse');
-      }
-
-      if (user.disabled) {
-        throw new ValidationError('auth.userDisabled');
-      }
-
-      await UsersDBApi.updatePassword(user.id, hashedPassword, options);
-
-      if (EmailSender.isConfigured) {
-        await this.sendEmailAddressVerificationEmail(user.email, host);
-      }
-
-      const data = {
-        user: {
-          id: user.id,
-          email: user.email,
-        },
-      };
-
-      return helpers.jwtSign(data);
-    }
+    if (user) throw new ValidationError('auth.emailAlreadyInUse');
 
     const newUser = await UsersDBApi.createFromAuth(
       {
@@ -109,7 +87,7 @@ class Auth {
     let link;
     try {
       const token = await UsersDBApi.generateEmailVerificationToken(email);
-      link = `${host}/verify-email?token=${token}`;
+      link = `${config.uiOrigin}/verify-email?token=${encodeURIComponent(token)}`;
     } catch (error) {
       console.error(error);
       throw new ValidationError('auth.emailAddressVerificationEmail.error');
@@ -128,7 +106,7 @@ class Auth {
 
     try {
       const token = await UsersDBApi.generatePasswordResetToken(email);
-      link = `${host}/password-reset?token=${token}`;
+      link = `${config.uiOrigin}/password-reset?token=${encodeURIComponent(token)}`;
     } catch (error) {
       console.error(error);
       throw new ValidationError('auth.passwordReset.error');
@@ -205,22 +183,19 @@ class Auth {
   }
 
   static async updateProfile(data, currentUser) {
-    let transaction = await db.sequelize.transaction();
-
-    try {
-      await UsersDBApi.findBy({ id: currentUser.id }, { transaction });
-
-      await UsersDBApi.update(currentUser.id, data, {
-        currentUser,
-        transaction,
-      });
-
-      await transaction.commit();
-    } catch (error) {
-      await transaction.rollback();
-      throw error;
+    if (!currentUser?.id || !data || typeof data !== 'object' || Array.isArray(data)) throw new ForbiddenError();
+    const allowed = ['firstName', 'lastName', 'phoneNumber'];
+    if (Object.keys(data).some(key => !allowed.includes(key))) throw new ForbiddenError();
+    const changes = {};
+    for (const key of allowed) {
+      if (data[key] !== undefined) {
+        if (typeof data[key] !== 'string' || data[key].length > 150) throw new ValidationError('errors.validation.message');
+        changes[key] = data[key].trim();
+      }
     }
+    return db.users.update(changes, {where:{id:currentUser.id}});
   }
+
 }
 
 module.exports = Auth;
