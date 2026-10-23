@@ -59,7 +59,7 @@ class Auth {
       throw new ValidationError('auth.wrongPassword');
     }
 
-    if (!EmailSender.isConfigured) {
+    if (process.env.NODE_ENV !== 'production' && !EmailSender.isConfigured) {
       user.emailVerified = true;
     }
 
