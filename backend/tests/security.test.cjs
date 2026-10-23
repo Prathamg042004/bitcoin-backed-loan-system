@@ -44,3 +44,13 @@ test('profile edits reject role and verification escalation and only update the 
   await service.updateProfile({firstName:' Demo '},{id:'self'});
   assert.equal(calls.length,1);assert.equal(calls[0].values.firstName,'Demo');assert.equal(calls[0].options.where.id,'self');
 });
+
+test('production login does not bypass email verification when email is unconfigured',async()=>{
+  const service=moduleAt('services/auth.js',{
+    '../db/api/users':{findBy:async()=>({id:'demo',password:'stored',emailVerified:false})},
+    './notifications/errors/validation':class extends Error{},'./notifications/errors/forbidden':class extends Error{},
+    bcrypt:{compare:async()=>true},'./email/list/addressVerification':class{},'./email/list/invitation':class{},'./email/list/passwordReset':class{},'./email':class{},
+    '../config':{bcrypt:{saltRounds:12}},'../helpers':{jwtSign:()=>assert.fail('must not issue token')},'../db/models':{},
+  },{NODE_ENV:'production'});
+  await assert.rejects(service.signin('demo@example.test','test-password'),/auth.userNotVerified/);
+});
