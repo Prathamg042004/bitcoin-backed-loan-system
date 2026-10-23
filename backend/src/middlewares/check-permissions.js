@@ -8,11 +8,7 @@ function checkPermissions(permission) {
   return (req, res, next) => {
     const { currentUser } = req;
     if (currentUser) {
-      if (currentUser.id === req.params.id || currentUser.id === req.body.id) {
-        next();
-        return;
-      }
-      const userPermission = currentUser.custom_permissions.find(
+      const userPermission = (currentUser.custom_permissions || []).find(
         (cp) => cp.name === permission,
       );
 

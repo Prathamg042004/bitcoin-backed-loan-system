@@ -35,7 +35,7 @@ passport.use(
   ),
 );
 
-passport.use(
+if (config.google.clientId && config.google.clientSecret) passport.use(
   new GoogleStrategy(
     {
       clientID: config.google.clientId,
@@ -49,7 +49,7 @@ passport.use(
   ),
 );
 
-passport.use(
+if (config.microsoft.clientId && config.microsoft.clientSecret) passport.use(
   new MicrosoftStrategy(
     {
       clientID: config.microsoft.clientId,
