@@ -8,6 +8,10 @@ Built on a [Flatlogic Platform](https://flatlogic.com) generated foundation. The
 
 This is a learning prototype, not a production lending platform. Loan and virtual-wallet records are application data; the repository should not be presented as proof of real Bitcoin custody, collateral settlement, or a live lending service.
 
+## Security status
+
+Authentication and authorization hardening is merged. Legacy file transfers are disabled until file ownership can be enforced. Critical dependency advisories remain: this project is for learning and must not handle real financial or personal data. See [security boundaries](SECURITY_HARDENING.md) and the [dependency upgrade review](https://github.com/Prathamg042004/bitcoin-backed-loan-system/pull/2).
+
 ## Technology
 
 | Layer | Stack |
