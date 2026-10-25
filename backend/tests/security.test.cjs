@@ -54,3 +54,31 @@ test('production login does not bypass email verification when email is unconfig
   },{NODE_ENV:'production'});
   await assert.rejects(service.signin('demo@example.test','test-password'),/auth.userNotVerified/);
 });
+
+
+test('JWT sessions bind to immutable account IDs and restrict signing algorithms',async()=>{
+ let options,verify;const lookups=[];
+ moduleAt('auth/auth.js',{
+  '../config':{providers:{},secret_key:'test-only-secret',google:{},microsoft:{}},'../helpers':{},'../db/models':{},
+  passport:{use(){}},'passport-jwt':{Strategy:class{constructor(o,v){options=o;verify=v;}},ExtractJwt:{fromAuthHeaderAsBearerToken:()=>()=>{}}},
+  'passport-google-oauth2':{Strategy:class{}},'passport-microsoft':{Strategy:class{}},
+  '../db/api/users':{findBy:async query=>{lookups.push(query);return {id:query.id};}},
+ });
+ assert.equal(options.algorithms.length,1);assert.equal(options.algorithms[0],'HS256');
+ let result;await verify({}, {user:{email:'reassigned@example.test'}},(error,user)=>{result=user;});assert.equal(result,false);assert.equal(lookups.length,0);
+ await verify({}, {user:{id:'original-id',email:'reassigned@example.test'}},()=>{});assert.equal(lookups[0].id,'original-id');assert.equal(lookups[0].email,undefined);
+});
+
+test('legacy file routes require authentication and never access client-selected storage',()=>{
+ const routes=[];const guard=()=>{};
+ moduleAt('routes/file.js',{
+  express:{Router:()=>({get:(...args)=>routes.push(args),post:(...args)=>routes.push(args)})},
+  passport:{authenticate:(strategy,options)=>{assert.equal(strategy,'jwt');assert.equal(options.session,false);return guard;}},
+ });
+ assert.equal(routes.length,2);
+ for(const [path,auth,handler] of routes){
+  assert.equal(auth,guard);let code,body;
+  handler({query:{privateUrl:'../../sensitive-file'},body:{filename:'../../overwrite'}},{status(value){code=value;return this;},json(value){body=value;}});
+  assert.equal(code,503);assert.match(body.error,/owner-scoped storage/);
+ }
+});

@@ -22,3 +22,12 @@ Run `node --test backend/tests/security.test.cjs`. These dependency-free regress
 ## Still required before deployment
 
 Review all entity ownership rules, password-reset token lifetimes, OAuth callback/state handling, upload permissions, dependency advisories, CORS, rate limits, seed data, and database migrations. Test against a disposable database. This is an educational prototype, not a financial custody or lending service.
+
+
+## File transfer and token boundaries
+
+Legacy upload and download HTTP routes are now authenticated and return 503. They must remain disabled until an authoritative file ownership mapping, safe object names, private storage, and authorized downloads are implemented. Old local downloads accepted arbitrary paths and the production cloud route had no owner checks. A client-selected folder or an unguessable prefix is not authorization.
+
+JWT authentication now restricts signatures to HS256 and resolves the immutable account ID from the verified token, rather than a potentially reassigned email address. Tokens lacking an account ID require sign-in again.
+
+Seven dependency-free regression tests cover these boundaries and run automatically on pull requests. They do not validate the complete legacy application or database. The current dependency graph still has critical/high advisories; do not expose this prototype publicly or use real financial/personal data until the dependency upgrade and integration review are complete.

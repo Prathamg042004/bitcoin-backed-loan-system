@@ -15,11 +15,13 @@ passport.use(
     {
       passReqToCallback: true,
       secretOrKey: config.secret_key,
+      algorithms: ['HS256'],
       jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken(),
     },
     async (req, token, done) => {
       try {
-        const user = await UsersDBApi.findBy({ email: token.user.email });
+        if (!token?.user?.id) return done(null, false);
+        const user = await UsersDBApi.findBy({ id: token.user.id });
 
         if (user && user.disabled) {
           return done(new Error(`User '${user.email}' is disabled`));
