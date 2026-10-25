@@ -1,22 +1,29 @@
 const os = require('os');
+const { randomBytes } = require('node:crypto');
+const production = process.env.NODE_ENV === 'production';
+const jwtSecret = process.env.JWT_SECRET || (production ? '' : randomBytes(32).toString('hex'));
+if (jwtSecret.length < 32) throw new Error('JWT_SECRET must contain at least 32 characters.');
+if (production && !process.env.APP_API_ORIGIN?.startsWith('https://')) throw new Error('APP_API_ORIGIN must use HTTPS in production.');
+const uiOrigin = new URL(process.env.APP_UI_ORIGIN || 'http://localhost:3000').origin;
+if (production && !uiOrigin.startsWith('https://')) throw new Error('APP_UI_ORIGIN must use HTTPS in production.');
 
 const config = {
   gcloud: {
-    bucket: 'fldemo-files',
-    hash: '1d6cbea38eddda96ea88e2fb5166f7a6',
+    bucket: process.env.GCLOUD_BUCKET || '',
+    hash: process.env.GCLOUD_HASH || '',
   },
   bcrypt: {
     saltRounds: 12,
   },
-  admin_pass: 'password',
+  admin_pass: process.env.ADMIN_SEED_PASSWORD || randomBytes(32).toString('hex'),
   admin_email: 'admin@flatlogic.com',
   providers: {
     LOCAL: 'local',
     GOOGLE: 'google',
     MICROSOFT: 'microsoft',
   },
-  secret_key: 'HUEyqESqgQ1yTwzVlO6wprC9Kf1J1xuA',
-  remote: '',
+  secret_key: jwtSecret,
+  remote: process.env.APP_API_ORIGIN || '',
   port: process.env.NODE_ENV === 'production' ? '' : '8080',
   hostUI: process.env.NODE_ENV === 'production' ? '' : 'http://localhost',
   portUI: process.env.NODE_ENV === 'production' ? '' : '3000',
@@ -26,25 +33,24 @@ const config = {
   swaggerUI: process.env.NODE_ENV === 'production' ? '' : 'http://localhost',
   swaggerPort: process.env.NODE_ENV === 'production' ? '' : ':8080',
   google: {
-    clientId:
-      '671001533244-kf1k1gmp6mnl0r030qmvdu6v36ghmim6.apps.googleusercontent.com',
-    clientSecret: 'Yo4qbKZniqvojzUQ60iKlxqR',
+    clientId: process.env.GOOGLE_CLIENT_ID || '',
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
   },
   microsoft: {
-    clientId: '4696f457-31af-40de-897c-e00d7d4cff73',
-    clientSecret: 'm8jzZ.5UpHF3=-dXzyxiZ4e[F8OF54@p',
+    clientId: process.env.MICROSOFT_CLIENT_ID || '',
+    clientSecret: process.env.MICROSOFT_CLIENT_SECRET || '',
   },
   uploadDir: os.tmpdir(),
   email: {
-    from: 'bitcoin backed loan system <app@flatlogic.app>',
-    host: 'email-smtp.us-east-1.amazonaws.com',
+    from: process.env.EMAIL_FROM || 'Loan Prototype <demo@example.invalid>',
+    host: process.env.EMAIL_HOST || '',
     port: 587,
     auth: {
-      user: 'AKIAVEW7G4PQUBGM52OF',
+      user: process.env.EMAIL_USER || '',
       pass: process.env.EMAIL_PASS,
     },
     tls: {
-      rejectUnauthorized: false,
+      rejectUnauthorized: true,
     },
   },
   roles: {
@@ -58,13 +64,14 @@ const config = {
       ? 'https://flatlogic.com/projects'
       : 'http://localhost:3000/projects',
 };
-config.pexelsKey = 'Vc99rnmOhHhJAbgGQoKLZtsaIVfkeownoQNbTj78VemUjKh08ZYRbf18';
+config.pexelsKey = process.env.PEXELS_API_KEY || '';
 config.pexelsQuery = 'abstract digital blockchain concept';
 config.host =
   process.env.NODE_ENV === 'production' ? config.remote : 'http://localhost';
 config.apiUrl = `${config.host}${config.port ? `:${config.port}` : ``}/api`;
 config.swaggerUrl = `${config.swaggerUI}${config.swaggerPort}`;
-config.uiUrl = `${config.hostUI}${config.portUI ? `:${config.portUI}` : ``}/#`;
+config.uiOrigin = uiOrigin;
+config.uiUrl = uiOrigin + "/#";
 config.backUrl = `${config.hostUI}${config.portUI ? `:${config.portUI}` : ``}`;
 
 module.exports = config;

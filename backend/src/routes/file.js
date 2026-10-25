@@ -1,34 +1,12 @@
 const express = require('express');
-const config = require('../config');
-const path = require('path');
 const passport = require('passport');
-const services = require('../services/file');
 const router = express.Router();
 
-router.get('/download', (req, res) => {
-  if (process.env.NODE_ENV == 'production') {
-    services.downloadGCloud(req, res);
-  } else {
-    services.downloadLocal(req, res);
-  }
+// Legacy storage has no authoritative owner mapping. Fail closed rather than
+// accepting client-selected paths or exposing documents across accounts.
+const unavailable = (req, res) => res.status(503).json({
+  error: 'File transfers are unavailable until owner-scoped storage is configured.',
 });
-
-router.post(
-  '/upload/:table/:field',
-  passport.authenticate('jwt', { session: false }),
-  (req, res) => {
-    const fileName = `${req.params.table}/${req.params.field}`;
-
-    if (process.env.NODE_ENV == 'production') {
-      services.uploadGCloud(fileName, req, res);
-    } else {
-      services.uploadLocal(fileName, {
-        entity: null,
-        maxFileSize: 10 * 1024 * 1024,
-        folderIncludesAuthenticationUid: false,
-      })(req, res);
-    }
-  },
-);
-
+router.get('/download', passport.authenticate('jwt', {session:false}), unavailable);
+router.post('/upload/:table/:field', passport.authenticate('jwt', {session:false}), unavailable);
 module.exports = router;
